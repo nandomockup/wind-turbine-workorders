@@ -48,19 +48,82 @@ jobs:
       run: |
         pip install boto3 markdown2
     
+    - name: Create HTML template
+      run: |
+        mkdir -p .templates
+        cat > .templates/doc_template.html << 'TEMPLATE'
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Wind Turbine Work Orders - API Documentation</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+                .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+                .header p { opacity: 0.9; font-size: 1.1rem; }
+                .meta { background: white; margin: 2rem auto; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .meta-item { display: inline-block; margin-right: 2rem; margin-bottom: 0.5rem; }
+                .meta-label { font-weight: 600; color: #667eea; }
+                .content { background: white; margin: 0 auto 2rem; padding: 2.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .content h2 { color: #667eea; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e0e0e0; }
+                .content h3 { color: #764ba2; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+                .content h4 { color: #555; margin-top: 1rem; margin-bottom: 0.5rem; }
+                .content ul, .content ol { margin-left: 2rem; margin-bottom: 1rem; }
+                .content li { margin-bottom: 0.5rem; }
+                .content code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: Monaco, monospace; font-size: 0.9em; color: #e83e8c; }
+                .content pre { background: #2d2d2d; color: #f8f8f2; padding: 1.5rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
+                .content pre code { background: none; color: inherit; padding: 0; }
+                .content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+                .content table th { background: #667eea; color: white; padding: 0.75rem; text-align: left; }
+                .content table td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; }
+                .content table tr:hover { background: #f9f9f9; }
+                .footer { text-align: center; padding: 2rem; color: #666; font-size: 0.9rem; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="container">
+                    <h1>🌬️ Wind Turbine Work Orders</h1>
+                    <p>API Documentation - Auto-Generated</p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="meta">
+                    <div class="meta-item"><span class="meta-label">Last Updated:</span> {{TIMESTAMP}}</div>
+                    <div class="meta-item"><span class="meta-label">Repository:</span> <a href="https://github.com/nandomockup/wind-turbine-workorders">wind-turbine-workorders</a></div>
+                    <div class="meta-item"><span class="meta-label">Changed Files:</span> {{FILE_COUNT}}</div>
+                </div>
+                <div class="content">
+                    <h2>📝 Latest Changes</h2>
+                    <p><strong>Files modified in this update:</strong></p>
+                    <ul>{{CHANGED_FILES}}</ul>
+                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e0e0e0;">
+                    {{CONTENT}}
+                </div>
+            </div>
+            <div class="footer">
+                <p>Documentation automatically generated using AWS Bedrock (Claude AI)</p>
+                <p>Wind Turbine Work Orders Management System © 2025</p>
+            </div>
+        </body>
+        </html>
+        TEMPLATE
+    
     - name: Generate documentation with AWS Bedrock
       run: |
         python3 << 'EOF'
         import boto3
         import json
         import os
-        import re
         from datetime import datetime
         import markdown2
         
         bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
         
-        # Read changed files
         with open('changed_files.txt', 'r') as f:
             changed_files = [line.strip() for line in f if line.strip().endswith('.cs')]
         
@@ -68,319 +131,71 @@ jobs:
             print("No C# files changed")
             exit(0)
         
-        # Read content of changed files
         files_content = {}
         for file_path in changed_files:
             if os.path.exists(file_path):
                 try:
                     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        files_content[file_path] = f.read()
+                        files_content[file_path] = f.read()[:4000]
                 except Exception as e:
                     print(f"Error reading {file_path}: {e}")
         
         if not files_content:
             exit(0)
         
-        # Prepare prompt to extract endpoints
-        prompt_parts = [
-            "Analyze this ASP.NET Core API code and extract ALL API endpoints with their details.",
-            "",
-            "For each file, identify:",
-            "1. All HTTP endpoints (Routes)",
-            "2. HTTP methods (GET, POST, PUT, DELETE, PATCH)",
-            "3. Route parameters",
-            "4. Request/Response models",
-            "5. Purpose and functionality",
-            "",
-            "Files to analyze:",
-            ""
-        ]
+        prompt_parts = ["Analyze this Wind Turbine Work Orders API code and generate professional documentation.", ""]
         
         for file_path, content in files_content.items():
-            truncated = content[:5000]
-            prompt_parts.append(f"### File: {file_path}")
-            prompt_parts.append(f"```csharp\n{truncated}\n```")
-            prompt_parts.append("")
+            prompt_parts.append(f"File: {file_path}")
+            prompt_parts.append(f"```csharp\n{content}\n```")
         
         prompt_parts.extend([
             "",
-            "Return a JSON array of endpoints in this EXACT format:",
-            "```json",
-            "[",
-            "  {",
-            '    "route": "/api/workorders",',
-            '    "method": "GET",',
-            '    "controller": "WorkOrderController",',
-            '    "action": "GetAll",',
-            '    "description": "Retrieves all work orders",',
-            '    "parameters": ["page", "size"],',
-            '    "requestBody": null,',
-            '    "responseType": "List<WorkOrderDto>",',
-            '    "file": "Controllers/WorkOrderController.cs"',
-            "  }",
-            "]",
-            "```",
+            "Create documentation with:",
+            "- Overview of changes and business impact",
+            "- API endpoints with methods, routes, parameters, examples",
+            "- Data models and relationships", 
+            "- Business logic and workflows",
+            "- Usage examples",
             "",
-            "IMPORTANT: Return ONLY the JSON array, no other text."
+            "Use Markdown format, professional tone for management."
         ])
         
-        # Call Bedrock to extract endpoints
         try:
             response = bedrock.invoke_model(
                 modelId='us.anthropic.claude-3-5-sonnet-20241022-v2:0',
                 body=json.dumps({
                     "anthropic_version": "bedrock-2023-05-31",
                     "max_tokens": 4096,
-                    "temperature": 0.1,
+                    "temperature": 0.3,
                     "messages": [{"role": "user", "content": "\n".join(prompt_parts)}]
                 })
             )
             
-            response_text = json.loads(response['body'].read())['content'][0]['text']
+            markdown_content = json.loads(response['body'].read())['content'][0]['text']
+            html_body = markdown2.markdown(markdown_content, extras=["fenced-code-blocks", "tables"])
             
-            # Extract JSON from response
-            json_match = re.search(r'\[[\s\S]*\]', response_text)
-            if json_match:
-                endpoints = json.loads(json_match.group())
-            else:
-                print("Could not extract endpoints JSON, using fallback")
-                endpoints = []
+            os.makedirs('docs', exist_ok=True)
             
-            print(f"✅ Extracted {len(endpoints)} endpoints")
+            with open('.templates/doc_template.html', 'r') as f:
+                html_template = f.read()
+            
+            timestamp = datetime.now().strftime('%B %d, %Y at %H:%M UTC')
+            changed_files_html = ''.join(f'<li><code>{f}</code></li>' for f in changed_files)
+            
+            final_html = html_template.replace('{{TIMESTAMP}}', timestamp)
+            final_html = final_html.replace('{{FILE_COUNT}}', str(len(changed_files)))
+            final_html = final_html.replace('{{CHANGED_FILES}}', changed_files_html)
+            final_html = final_html.replace('{{CONTENT}}', html_body)
+            
+            with open('docs/index.html', 'w', encoding='utf-8') as f:
+                f.write(final_html)
+            
+            print("✅ Documentation generated!")
             
         except Exception as e:
-            print(f"Error extracting endpoints: {e}")
-            endpoints = []
-        
-        # Create docs directory
-        os.makedirs('docs/endpoints', exist_ok=True)
-        
-        # Load existing endpoints registry
-        registry_path = 'docs/endpoints_registry.json'
-        if os.path.exists(registry_path):
-            with open(registry_path, 'r') as f:
-                registry = json.load(f)
-        else:
-            registry = {"endpoints": [], "last_updated": ""}
-        
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
-        
-        # Update or add endpoints
-        for endpoint in endpoints:
-            route = endpoint.get('route', 'unknown')
-            method = endpoint.get('method', 'GET')
-            
-            # Create safe filename
-            safe_name = re.sub(r'[^a-z0-9]+', '-', f"{method}-{route}".lower()).strip('-')
-            endpoint['id'] = safe_name
-            endpoint['last_updated'] = timestamp
-            
-            # Check if endpoint exists in registry
-            existing = next((e for e in registry['endpoints'] if e.get('id') == safe_name), None)
-            
-            if existing:
-                endpoint['status'] = 'updated'
-                # Update existing
-                registry['endpoints'] = [e if e.get('id') != safe_name else endpoint for e in registry['endpoints']]
-            else:
-                endpoint['status'] = 'new'
-                registry['endpoints'].append(endpoint)
-            
-            # Generate detailed docs for this endpoint
-            detail_prompt = "Generate comprehensive API documentation for this endpoint:\n\n"
-            detail_prompt += f"Route: {route}\n"
-            detail_prompt += f"Method: {method}\n"
-            detail_prompt += f"Controller: {endpoint.get('controller', 'Unknown')}\n"
-            detail_prompt += f"Description: {endpoint.get('description', 'No description')}\n\n"
-            detail_prompt += "Include:\n"
-            detail_prompt += "1. **Overview** - What this endpoint does\n"
-            detail_prompt += "2. **Request Details** - URL, method, parameters, headers, body schema\n"
-            detail_prompt += "3. **Response Details** - Status codes, response schema, examples\n"
-            detail_prompt += "4. **Error Handling** - Possible errors and how to handle them\n"
-            detail_prompt += "5. **Business Logic** - What happens when this is called\n"
-            detail_prompt += "6. **Usage Example** - cURL and C# code examples\n\n"
-            detail_prompt += "Use professional Markdown format."
-
-            try:
-                detail_response = bedrock.invoke_model(
-                    modelId='us.anthropic.claude-3-5-sonnet-20241022-v2:0',
-                    body=json.dumps({
-                        "anthropic_version": "bedrock-2023-05-31",
-                        "max_tokens": 3000,
-                        "temperature": 0.3,
-                        "messages": [{"role": "user", "content": detail_prompt}]
-                    })
-                )
-                
-                detail_markdown = json.loads(detail_response['body'].read())['content'][0]['text']
-                detail_html = markdown2.markdown(detail_markdown, extras=["fenced-code-blocks", "tables"])
-                
-                # Create endpoint page
-                endpoint_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{method} {route} - Wind Turbine API</title>
-    <link rel="stylesheet" href="../styles.css">
-</head>
-<body>
-    <div class="endpoint-header">
-        <div class="container">
-            <div class="breadcrumb">
-                <a href="../index.html">← Back to All Endpoints</a>
-            </div>
-            <div class="endpoint-title">
-                <span class="method-badge {method.lower()}">{method}</span>
-                <h1>{route}</h1>
-            </div>
-            <div class="endpoint-meta">
-                <span class="status-badge {endpoint['status']}">{endpoint['status'].upper()}</span>
-                <span class="updated">Last Updated: {timestamp}</span>
-            </div>
-        </div>
-    </div>
-    <div class="container">
-        <div class="content">
-            {detail_html}
-        </div>
-    </div>
-</body>
-</html>"""
-                
-                with open(f'docs/endpoints/{safe_name}.html', 'w', encoding='utf-8') as f:
-                    f.write(endpoint_html)
-                
-                print(f"✅ Generated: {safe_name}.html")
-                
-            except Exception as e:
-                print(f"Error generating detail for {route}: {e}")
-        
-        # Save registry
-        registry['last_updated'] = timestamp
-        with open(registry_path, 'w') as f:
-            json.dump(registry, f, indent=2)
-        
-        # Generate main index with sidebar
-        sidebar_items = []
-        for ep in sorted(registry['endpoints'], key=lambda x: x.get('route', '')):
-            status_badge = f'<span class="mini-badge {ep["status"]}">{ep["status"][0].upper()}</span>' if ep.get('status') else ''
-            sidebar_items.append(f'''
-                <a href="endpoints/{ep['id']}.html" class="sidebar-item">
-                    <span class="method-badge {ep.get('method', 'GET').lower()}">{ep.get('method', 'GET')}</span>
-                    <span class="route-text">{ep.get('route', 'Unknown')}</span>
-                    {status_badge}
-                </a>
-            ''')
-        
-        sidebar_html = ''.join(sidebar_items)
-        
-        # Create styles.css
-        styles_css = """
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
-.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-.endpoint-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem 0; }
-.container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
-.header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-.breadcrumb { margin-bottom: 1rem; }
-.breadcrumb a { color: white; text-decoration: none; opacity: 0.9; }
-.breadcrumb a:hover { opacity: 1; text-decoration: underline; }
-.endpoint-title { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
-.endpoint-title h1 { font-size: 2rem; }
-.endpoint-meta { display: flex; gap: 1rem; align-items: center; font-size: 0.9rem; }
-.layout { display: flex; gap: 2rem; margin-top: 2rem; }
-.sidebar { width: 320px; background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: fit-content; position: sticky; top: 2rem; }
-.sidebar h2 { margin-bottom: 1rem; color: #667eea; font-size: 1.2rem; }
-.sidebar-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 6px; text-decoration: none; color: #333; transition: all 0.2s; margin-bottom: 0.5rem; }
-.sidebar-item:hover { background: #f0f0f0; }
-.route-text { flex: 1; font-size: 0.9rem; }
-.mini-badge { font-size: 0.7rem; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: 600; }
-.mini-badge.new { background: #28a745; color: white; }
-.mini-badge.updated { background: #ffc107; color: #333; }
-.main-content { flex: 1; background: white; border-radius: 8px; padding: 2.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.content { background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 2rem; }
-.method-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
-.method-badge.get { background: #28a745; color: white; }
-.method-badge.post { background: #007bff; color: white; }
-.method-badge.put { background: #ffc107; color: #333; }
-.method-badge.delete { background: #dc3545; color: white; }
-.method-badge.patch { background: #6c757d; color: white; }
-.status-badge { padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; }
-.status-badge.new { background: #28a745; color: white; }
-.status-badge.updated { background: #ffc107; color: #333; }
-.content h2 { color: #667eea; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e0e0e0; }
-.content h3 { color: #764ba2; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-.content code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: Monaco, monospace; font-size: 0.9em; color: #e83e8c; }
-.content pre { background: #2d2d2d; color: #f8f8f2; padding: 1.5rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
-.content pre code { background: none; color: inherit; padding: 0; }
-.content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
-.content table th { background: #667eea; color: white; padding: 0.75rem; text-align: left; }
-.content table td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-.stat-card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-.stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
-.stat-label { color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
-"""
-        
-        with open('docs/styles.css', 'w') as f:
-            f.write(styles_css)
-        
-        # Generate main index
-        total_endpoints = len(registry['endpoints'])
-        new_count = len([e for e in registry['endpoints'] if e.get('status') == 'new'])
-        updated_count = len([e for e in registry['endpoints'] if e.get('status') == 'updated'])
-        
-        index_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wind Turbine Work Orders - API Documentation</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-            <h1>🌬️ Wind Turbine Work Orders API</h1>
-            <p>Comprehensive API Documentation - Last Updated: {timestamp}</p>
-        </div>
-    </div>
-    <div class="container">
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">{total_endpoints}</div>
-                <div class="stat-label">Total Endpoints</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{new_count}</div>
-                <div class="stat-label">New Endpoints</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{updated_count}</div>
-                <div class="stat-label">Updated Endpoints</div>
-            </div>
-        </div>
-        <div class="layout">
-            <div class="sidebar">
-                <h2>📍 API Endpoints</h2>
-                {sidebar_html}
-            </div>
-            <div class="main-content">
-                <h2>Welcome to Wind Turbine API Documentation</h2>
-                <p>Select an endpoint from the sidebar to view detailed documentation.</p>
-                <p style="margin-top: 1rem; color: #666;">This documentation is automatically generated using AI whenever the codebase changes.</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>"""
-        
-        with open('docs/index.html', 'w', encoding='utf-8') as f:
-            f.write(index_html)
-        
-        print(f"✅ Generated main index with {total_endpoints} endpoints")
-        print(f"📊 New: {new_count}, Updated: {updated_count}")
+            print(f"❌ Error: {e}")
+            raise
         
         EOF
     
