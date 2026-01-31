@@ -49,7 +49,7 @@ jobs:
     
     - name: Generate documentation with AWS Bedrock
       run: |
-        python3 << 'PYTHON_SCRIPT'
+        python3 << 'EOF'
         import boto3
         import json
         import os
@@ -81,71 +81,68 @@ jobs:
             exit(0)
         
         # Prepare enhanced prompt for Wind Turbine Work Orders system
-        prompt = f"""You are analyzing a Wind Turbine Work Orders Management System built with ASP.NET Core.
-
-Generate comprehensive, professional API documentation in Markdown format for the following changed files:
-
-"""
+        prompt_parts = [
+            "You are analyzing a Wind Turbine Work Orders Management System built with ASP.NET Core.",
+            "",
+            "Generate comprehensive, professional API documentation in Markdown format for the following changed files:",
+            ""
+        ]
+        
         for file_path, content in files_content.items():
             # Limit to 4000 chars per file to manage token usage
             truncated_content = content[:4000]
             if len(content) > 4000:
                 truncated_content += "\n... [truncated]"
-            prompt += f"\n## File: {file_path}\n```csharp\n{truncated_content}\n```\n"
+            prompt_parts.append(f"## File: {file_path}")
+            prompt_parts.append(f"```csharp\n{truncated_content}\n```")
+            prompt_parts.append("")
         
-        prompt += """
-
-Generate documentation with these sections:
-
-# 📋 Wind Turbine Work Orders API - Change Log
-
-## Overview
-- Summarize what changed and the business impact
-- Explain how this affects work order management
-
-## API Endpoints
-For each endpoint, document:
-- **HTTP Method & Route**
-- **Purpose** - What does this endpoint do in the work order workflow?
-- **Parameters** - Query params, route params, request body
-- **Request Example** - JSON payload
-- **Response Example** - Success response with JSON
-- **Error Responses** - Common errors (400, 401, 404, 500)
-- **Authorization** - Required roles or permissions
-
-## Data Models
-- Document any DTOs, entities, or view models
-- Show property types and validation rules
-- Explain relationships (e.g., WorkOrder → Turbine)
-
-## Business Logic
-- Key business rules implemented
-- Workflows (e.g., work order lifecycle: Created → Assigned → In Progress → Completed)
-- Validation logic
-
-## Database Changes
-- Any new tables, columns, or migrations
-- Relationships and foreign keys
-
-## Integration Points
-- External APIs or services used
-- Message queues or event handlers
-
-## Usage Examples
-Provide code snippets showing:
-- How to create a work order
-- How to update turbine status
-- How to query work orders by date/technician
-
-## Testing Notes
-- Suggest test cases for QA
-- Edge cases to validate
-
----
-**Format:** Use proper Markdown with headers, code blocks, tables, and emojis for better readability.
-**Style:** Professional, clear, and developer-friendly.
-"""
-
+        prompt_parts.extend([
+            "Generate documentation with these sections:",
+            "",
+            "# Wind Turbine Work Orders API - Change Log",
+            "",
+            "## Overview",
+            "- Summarize what changed and the business impact",
+            "- Explain how this affects work order management",
+            "",
+            "## API Endpoints",
+            "For each endpoint, document:",
+            "- **HTTP Method & Route**",
+            "- **Purpose** - What does this endpoint do in the work order workflow?",
+            "- **Parameters** - Query params, route params, request body",
+            "- **Request Example** - JSON payload",
+            "- **Response Example** - Success response with JSON",
+            "- **Error Responses** - Common errors (400, 401, 404, 500)",
+            "- **Authorization** - Required roles or permissions",
+            "",
+            "## Data Models",
+            "- Document any DTOs, entities, or view models",
+            "- Show property types and validation rules",
+            "- Explain relationships (e.g., WorkOrder → Turbine)",
+            "",
+            "## Business Logic",
+            "- Key business rules implemented",
+            "- Workflows (e.g., work order lifecycle: Created → Assigned → In Progress → Completed)",
+            "- Validation logic",
+            "",
+            "## Database Changes",
+            "- Any new tables, columns, or migrations",
+            "- Relationships and foreign keys",
+            "",
+            "## Usage Examples",
+            "Provide code snippets showing:",
+            "- How to create a work order",
+            "- How to update turbine status",
+            "- How to query work orders",
+            "",
+            "---",
+            "**Format:** Use proper Markdown with headers, code blocks, and tables.",
+            "**Style:** Professional, clear, and developer-friendly."
+        ])
+        
+        prompt = "\n".join(prompt_parts)
+        
         # Call Bedrock with Claude
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
@@ -171,22 +168,26 @@ Provide code snippets showing:
             # Create docs directory
             os.makedirs('docs', exist_ok=True)
             
-            # Check if index exists and append, or create new
+            # Generate timestamp
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
-            date_only = datetime.now().strftime('%Y-%m-%d')
             
             # Generate changelog entry
-            changelog_entry = f"""
----
-
-## Update: {timestamp}
-
-**Changed Files:**
-{chr(10).join(f'- `{f}`' for f in changed_files)}
-
-{documentation}
-
-"""
+            changelog_parts = [
+                "---",
+                "",
+                f"## Update: {timestamp}",
+                "",
+                "**Changed Files:**"
+            ]
+            
+            for f in changed_files:
+                changelog_parts.append(f"- `{f}`")
+            
+            changelog_parts.append("")
+            changelog_parts.append(documentation)
+            changelog_parts.append("")
+            
+            changelog_entry = "\n".join(changelog_parts)
             
             # Update or create index
             index_path = 'docs/index.md'
@@ -194,63 +195,42 @@ Provide code snippets showing:
                 with open(index_path, 'r', encoding='utf-8') as f:
                     existing_content = f.read()
                 
-                # Insert new changelog at the top (after header)
-                if '# 🌬️ Wind Turbine Work Orders API Documentation' in existing_content:
-                    parts = existing_content.split('---', 1)
-                    new_content = parts[0] + changelog_entry + (parts[1] if len(parts) > 1 else '')
+                # Insert new changelog at the top
+                header = "# Wind Turbine Work Orders API Documentation\n\n**Last Updated:** " + timestamp + "\n\n"
+                if existing_content.startswith("# Wind Turbine Work Orders"):
+                    # Find the end of the header section
+                    parts = existing_content.split("---", 1)
+                    if len(parts) > 1:
+                        new_content = parts[0] + changelog_entry + "\n" + parts[1]
+                    else:
+                        new_content = header + changelog_entry + "\n\n" + existing_content
                 else:
-                    new_content = f"""# 🌬️ Wind Turbine Work Orders API Documentation
-
-**Last Updated:** {timestamp}
-
-{changelog_entry}
-
-{existing_content}
-"""
+                    new_content = header + changelog_entry + "\n\n" + existing_content
             else:
-                new_content = f"""# 🌬️ Wind Turbine Work Orders API Documentation
-
-**Repository:** [wind-turbine-workorders](https://github.com/nandomockup/wind-turbine-workorders)  
-**Last Updated:** {timestamp}
-
-> 🤖 This documentation is automatically generated using AI whenever the API code changes.
-
-{changelog_entry}
-
----
-
-## 📚 Quick Links
-- [API Reference](#api-endpoints)
-- [Data Models](#data-models)
-- [Setup Guide](./setup.md)
-- [Changelog](./changelog.md)
-
-"""
+                header_parts = [
+                    "# Wind Turbine Work Orders API Documentation",
+                    "",
+                    f"**Repository:** [wind-turbine-workorders](https://github.com/nandomockup/wind-turbine-workorders)",
+                    f"**Last Updated:** {timestamp}",
+                    "",
+                    "> This documentation is automatically generated using AI whenever the API code changes.",
+                    ""
+                ]
+                new_content = "\n".join(header_parts) + "\n" + changelog_entry
             
             with open(index_path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             
-            # Also create a separate changelog file
-            changelog_path = 'docs/changelog.md'
-            if os.path.exists(changelog_path):
-                with open(changelog_path, 'r', encoding='utf-8') as f:
-                    changelog_content = f.read()
-                changelog_content = f"# 📝 Changelog\n\n{changelog_entry}\n\n{changelog_content}"
-            else:
-                changelog_content = f"# 📝 Changelog\n\n{changelog_entry}"
-            
-            with open(changelog_path, 'w', encoding='utf-8') as f:
-                f.write(changelog_content)
-            
-            print(f"✅ Documentation generated successfully!")
-            print(f"📄 Updated: docs/index.md")
-            print(f"📝 Updated: docs/changelog.md")
+            print("Documentation generated successfully!")
+            print(f"Updated: docs/index.md")
             
         except Exception as e:
-            print(f"❌ Error calling Bedrock: {e}")
+            print(f"Error calling Bedrock: {e}")
+            import traceback
+            traceback.print_exc()
             raise
         
-        PYTHON_SCRIPT
+        EOF
     
     - name: Setup GitHub Pages config
       run: |
@@ -258,25 +238,9 @@ Provide code snippets showing:
         cat > _config.yml << 'EOF'
         theme: jekyll-theme-slate
         title: Wind Turbine Work Orders API
-        description: Auto-generated API documentation for Wind Turbine Work Order Management System
+        description: Auto-generated API documentation
         show_downloads: true
         EOF
-    
-    - name: Create README for docs
-      run: |
-        cd docs
-        if [ ! -f README.md ]; then
-          cat > README.md << 'EOF'
-        # Wind Turbine Work Orders API Documentation
-        
-        This documentation is automatically generated from the codebase.
-        
-        ## Quick Start
-        - [API Documentation](./index.md)
-        - [Changelog](./changelog.md)
-        
-        EOF
-        fi
     
     - name: Commit documentation
       run: |
@@ -297,51 +261,3 @@ Provide code snippets showing:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs
         publish_branch: gh-pages
-
-  deploy-to-aws-vm:
-    needs: generate-docs
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.0.x'  # Adjust to your .NET version
-    
-    - name: Restore dependencies
-      run: dotnet restore
-    
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-    
-    - name: Publish
-      run: dotnet publish --configuration Release --no-build --output ./publish
-    
-    - name: Deploy to AWS VM
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.AWS_VM_SSH_KEY }}
-        VM_HOST: ${{ secrets.AWS_VM_HOST }}
-        VM_USER: ${{ secrets.AWS_VM_USER }}
-      run: |
-        # Setup SSH
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        
-        # Add VM to known hosts
-        ssh-keyscan -H $VM_HOST >> ~/.ssh/known_hosts
-        
-        # Copy files to VM
-        scp -i ~/.ssh/deploy_key -r ./publish/* $VM_USER@$VM_HOST:/var/www/wind-turbine-workorders/
-        
-        # Restart the application (adjust command as needed)
-        ssh -i ~/.ssh/deploy_key $VM_USER@$VM_HOST << 'ENDSSH'
-          cd /var/www/wind-turbine-workorders
-          sudo systemctl restart wind-turbine-api
-        ENDSSH
-        
-        echo "✅ Deployed to AWS VM successfully!"
