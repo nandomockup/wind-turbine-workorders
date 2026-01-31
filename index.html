@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Turbine Work Orders - API Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .header p { opacity: 0.9; font-size: 1.1rem; }
+        .meta { background: white; margin: 2rem auto; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .meta-item { display: inline-block; margin-right: 2rem; margin-bottom: 0.5rem; }
+        .meta-label { font-weight: 600; color: #667eea; }
+        .content { background: white; margin: 0 auto 2rem; padding: 2.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .content h2 { color: #667eea; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e0e0e0; }
+        .content h3 { color: #764ba2; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .content h4 { color: #555; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .content ul, .content ol { margin-left: 2rem; margin-bottom: 1rem; }
+        .content li { margin-bottom: 0.5rem; }
+        .content code { background: #f4f4f4; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: Monaco, monospace; font-size: 0.9em; color: #e83e8c; }
+        .content pre { background: #2d2d2d; color: #f8f8f2; padding: 1.5rem; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
+        .content pre code { background: none; color: inherit; padding: 0; }
+        .content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .content table th { background: #667eea; color: white; padding: 0.75rem; text-align: left; }
+        .content table td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; }
+        .content table tr:hover { background: #f9f9f9; }
+        .footer { text-align: center; padding: 2rem; color: #666; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>🌬️ Wind Turbine Work Orders</h1>
+            <p>API Documentation - Auto-Generated</p>
+        </div>
+    </div>
+    <div class="container">
+        <div class="meta">
+            <div class="meta-item"><span class="meta-label">Last Updated:</span> January 31, 2026 at 02:21 UTC</div>
+            <div class="meta-item"><span class="meta-label">Repository:</span> <a href="https://github.com/nandomockup/wind-turbine-workorders">wind-turbine-workorders</a></div>
+            <div class="meta-item"><span class="meta-label">Changed Files:</span> 1</div>
+        </div>
+        <div class="content">
+            <h2>📝 Latest Changes</h2>
+            <p><strong>Files modified in this update:</strong></p>
+            <ul><li><code>WindTurbineWorkOrders/Controllers/WorkOrdersController.cs</code></li></ul>
+            <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e0e0e0;">
+            <h1>Wind Turbine Work Orders API Documentation</h1>
+
+<h2>Overview</h2>
+
+<p>This API provides functionality to manage and retrieve work orders for wind turbine maintenance operations. The system enables efficient tracking and monitoring of maintenance activities across wind turbine installations.</p>
+
+<h3>Business Impact</h3>
+
+<ul>
+<li>Streamlines maintenance workflow management</li>
+<li>Enables real-time tracking of work order status</li>
+<li>Facilitates better resource allocation for maintenance teams</li>
+<li>Improves operational efficiency through systematic work order management</li>
+</ul>
+
+<h2>API Endpoints</h2>
+
+<h3>1. Get All Work Orders</h3>
+
+<p>Retrieves a list of all work orders in the system.</p>
+
+<p><strong>Endpoint:</strong> <code>GET /api/WorkOrders</code></p>
+
+<p><strong>Response:</strong> Array of WorkOrder objects</p>
+
+<pre><code>[
+  {
+    "workOrderNumber": "WTWO-0001",
+    "turbineId": "TURB-001",
+    "description": "Maintenance for wind turbine 1",
+    "status": "Closed"
+  },
+  {
+    "workOrderNumber": "WTWO-0002",
+    "turbineId": "TURB-002",
+    "description": "Maintenance for wind turbine 2",
+    "status": "Open"
+  }
+]
+</code></pre>
+
+<h3>2. Get Work Order by Number</h3>
+
+<p>Retrieves a specific work order using its unique work order number.</p>
+
+<p><strong>Endpoint:</strong> <code>GET /api/WorkOrders/{workOrderNumber}</code></p>
+
+<p><strong>Parameters:</strong>
+- <code>workOrderNumber</code> (string): Unique identifier for the work order (Format: WTWO-XXXX)</p>
+
+<p><strong>Response:</strong> Single WorkOrder object</p>
+
+<pre><code>{
+  "workOrderNumber": "WTWO-0001",
+  "turbineId": "TURB-001",
+  "description": "Maintenance for wind turbine 1",
+  "status": "Closed"
+}
+</code></pre>
+
+<h2>Data Model</h2>
+
+<h3>WorkOrder</h3>
+
+<table>
+<thead>
+<tr>
+  <th>Field</th>
+  <th>Type</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>WorkOrderNumber</td>
+  <td>string</td>
+  <td>Unique identifier (Format: WTWO-XXXX)</td>
+</tr>
+<tr>
+  <td>TurbineId</td>
+  <td>string</td>
+  <td>Associated turbine ID (Format: TURB-XXX)</td>
+</tr>
+<tr>
+  <td>Description</td>
+  <td>string</td>
+  <td>Description of maintenance work</td>
+</tr>
+<tr>
+  <td>Status</td>
+  <td>string</td>
+  <td>Current status ("Open" or "Closed")</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Business Logic</h2>
+
+<ul>
+<li>Work orders are automatically generated for 15 sample turbines</li>
+<li>Work order numbers follow the format WTWO-XXXX</li>
+<li>Turbine IDs follow the format TURB-XXX</li>
+<li>Status alternates between "Open" and "Closed" based on even/odd work order numbers</li>
+<li>Returns 404 Not Found if requested work order doesn't exist</li>
+</ul>
+
+<h2>Usage Examples</h2>
+
+<h3>Curl Commands</h3>
+
+<ol>
+<li>Get all work orders:</li>
+</ol>
+
+<pre><code>curl -X GET https://your-domain/api/WorkOrders
+</code></pre>
+
+<ol start="2">
+<li>Get specific work order:</li>
+</ol>
+
+<pre><code>curl -X GET https://your-domain/api/WorkOrders/WTWO-0001
+</code></pre>
+
+<h2>Implementation Notes</h2>
+
+<ul>
+<li>Built using ASP.NET Core Web API</li>
+<li>Uses in-memory storage for demonstration purposes</li>
+<li>Implements RESTful principles</li>
+<li>Returns appropriate HTTP status codes (200 OK, 404 Not Found)</li>
+</ul>
+
+<h2>Future Enhancements</h2>
+
+<ol>
+<li>Add authentication and authorization</li>
+<li>Implement POST/PUT/DELETE operations</li>
+<li>Add persistent storage</li>
+<li>Include filtering and pagination</li>
+<li>Add work order history tracking</li>
+</ol>
+
+<h2>Error Handling</h2>
+
+<ul>
+<li>Returns 404 Not Found for non-existent work orders</li>
+<li>Standard HTTP status codes for success/failure scenarios</li>
+</ul>
+
+<p>This API serves as a foundation for wind turbine maintenance management and can be extended based on specific business requirements.</p>
+
+        </div>
+    </div>
+    <div class="footer">
+        <p>Documentation automatically generated using AWS Bedrock (Claude AI)</p>
+        <p>Wind Turbine Work Orders Management System © 2025</p>
+    </div>
+</body>
+</html>
