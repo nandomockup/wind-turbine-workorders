@@ -8,6 +8,7 @@ on:
       - '**.csproj'
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -45,15 +46,16 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install boto3
+        pip install boto3 markdown2
     
-    - name: Generate documentation with AWS Bedrock
+    - name: Generate HTML documentation with AWS Bedrock
       run: |
         python3 << 'EOF'
         import boto3
         import json
         import os
         from datetime import datetime
+        import markdown2
         
         # Initialize Bedrock client
         bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
@@ -80,7 +82,7 @@ jobs:
             print("No valid file content to process")
             exit(0)
         
-        # Prepare enhanced prompt for Wind Turbine Work Orders system
+        # Prepare prompt
         prompt_parts = [
             "You are analyzing a Wind Turbine Work Orders Management System built with ASP.NET Core.",
             "",
@@ -89,7 +91,6 @@ jobs:
         ]
         
         for file_path, content in files_content.items():
-            # Limit to 4000 chars per file to manage token usage
             truncated_content = content[:4000]
             if len(content) > 4000:
                 truncated_content += "\n... [truncated]"
@@ -100,60 +101,32 @@ jobs:
         prompt_parts.extend([
             "Generate documentation with these sections:",
             "",
-            "# Wind Turbine Work Orders API - Change Log",
-            "",
             "## Overview",
-            "- Summarize what changed and the business impact",
-            "- Explain how this affects work order management",
+            "Summarize what changed and the business impact for management review.",
             "",
             "## API Endpoints",
-            "For each endpoint, document:",
-            "- **HTTP Method & Route**",
-            "- **Purpose** - What does this endpoint do in the work order workflow?",
-            "- **Parameters** - Query params, route params, request body",
-            "- **Request Example** - JSON payload",
-            "- **Response Example** - Success response with JSON",
-            "- **Error Responses** - Common errors (400, 401, 404, 500)",
-            "- **Authorization** - Required roles or permissions",
+            "Document each endpoint with HTTP method, route, purpose, parameters, request/response examples, and error codes.",
             "",
             "## Data Models",
-            "- Document any DTOs, entities, or view models",
-            "- Show property types and validation rules",
-            "- Explain relationships (e.g., WorkOrder → Turbine)",
+            "Document DTOs, entities, validation rules, and relationships.",
             "",
-            "## Business Logic",
-            "- Key business rules implemented",
-            "- Workflows (e.g., work order lifecycle: Created → Assigned → In Progress → Completed)",
-            "- Validation logic",
-            "",
-            "## Database Changes",
-            "- Any new tables, columns, or migrations",
-            "- Relationships and foreign keys",
+            "## Business Logic & Workflows",
+            "Explain key business rules and work order lifecycle.",
             "",
             "## Usage Examples",
-            "Provide code snippets showing:",
-            "- How to create a work order",
-            "- How to update turbine status",
-            "- How to query work orders",
+            "Provide practical code examples.",
             "",
-            "---",
-            "**Format:** Use proper Markdown with headers, code blocks, and tables.",
-            "**Style:** Professional, clear, and developer-friendly."
+            "Use professional tone suitable for technical management review."
         ])
         
         prompt = "\n".join(prompt_parts)
         
-        # Call Bedrock with Claude
+        # Call Bedrock
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 4096,
             "temperature": 0.3,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            "messages": [{"role": "user", "content": prompt}]
         }
         
         try:
@@ -163,83 +136,255 @@ jobs:
             )
             
             response_body = json.loads(response['body'].read())
-            documentation = response_body['content'][0]['text']
+            markdown_content = response_body['content'][0]['text']
             
             # Create docs directory
             os.makedirs('docs', exist_ok=True)
             
             # Generate timestamp
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')
+            timestamp = datetime.now().strftime('%B %d, %Y at %H:%M UTC')
+            date_only = datetime.now().strftime('%Y-%m-%d')
             
-            # Generate changelog entry
-            changelog_parts = [
-                "---",
-                "",
-                f"## Update: {timestamp}",
-                "",
-                "**Changed Files:**"
-            ]
+            # Convert markdown to HTML
+            html_body = markdown2.markdown(markdown_content, extras=["fenced-code-blocks", "tables", "header-ids"])
             
-            for f in changed_files:
-                changelog_parts.append(f"- `{f}`")
+            # Create professional HTML
+            html_template = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Turbine Work Orders - API Documentation</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }}
+        
+        .header {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }}
+        
+        .header h1 {{
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }}
+        
+        .header p {{
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }}
+        
+        .meta {{
+            background: white;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        .meta-item {{
+            display: inline-block;
+            margin-right: 2rem;
+            margin-bottom: 0.5rem;
+        }}
+        
+        .meta-label {{
+            font-weight: 600;
+            color: #667eea;
+        }}
+        
+        .content {{
+            background: white;
+            margin: 0 auto 2rem;
+            padding: 2.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
+        
+        .content h2 {{
+            color: #667eea;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e0e0e0;
+        }}
+        
+        .content h3 {{
+            color: #764ba2;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }}
+        
+        .content h4 {{
+            color: #555;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }}
+        
+        .content ul, .content ol {{
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }}
+        
+        .content li {{
+            margin-bottom: 0.5rem;
+        }}
+        
+        .content code {{
+            background: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }}
+        
+        .content pre {{
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }}
+        
+        .content pre code {{
+            background: none;
+            color: inherit;
+            padding: 0;
+        }}
+        
+        .content table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }}
+        
+        .content table th {{
+            background: #667eea;
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+        }}
+        
+        .content table td {{
+            padding: 0.75rem;
+            border-bottom: 1px solid #e0e0e0;
+        }}
+        
+        .content table tr:hover {{
+            background: #f9f9f9;
+        }}
+        
+        .badge {{
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }}
+        
+        .badge-new {{
+            background: #28a745;
+            color: white;
+        }}
+        
+        .badge-modified {{
+            background: #ffc107;
+            color: #333;
+        }}
+        
+        .footer {{
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            font-size: 0.9rem;
+        }}
+        
+        @media print {{
+            .header {{
+                background: #667eea;
+            }}
+            .content {{
+                box-shadow: none;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>🌬️ Wind Turbine Work Orders</h1>
+            <p>API Documentation - Auto-Generated</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="meta">
+            <div class="meta-item">
+                <span class="meta-label">Last Updated:</span> {timestamp}
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Repository:</span> 
+                <a href="https://github.com/nandomockup/wind-turbine-workorders" target="_blank">wind-turbine-workorders</a>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Changed Files:</span> {len(changed_files)}
+            </div>
+        </div>
+        
+        <div class="content">
+            <h2>📝 Latest Changes</h2>
+            <p><strong>Files modified in this update:</strong></p>
+            <ul>
+                {''.join(f'<li><code>{f}</code></li>' for f in changed_files)}
+            </ul>
             
-            changelog_parts.append("")
-            changelog_parts.append(documentation)
-            changelog_parts.append("")
+            <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e0e0e0;">
             
-            changelog_entry = "\n".join(changelog_parts)
+            {html_body}
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Documentation automatically generated using AWS Bedrock (Claude AI)</p>
+        <p>Wind Turbine Work Orders Management System © 2025</p>
+    </div>
+</body>
+</html>"""
             
-            # Update or create index
-            index_path = 'docs/index.md'
-            if os.path.exists(index_path):
-                with open(index_path, 'r', encoding='utf-8') as f:
-                    existing_content = f.read()
-                
-                # Insert new changelog at the top
-                header = "# Wind Turbine Work Orders API Documentation\n\n**Last Updated:** " + timestamp + "\n\n"
-                if existing_content.startswith("# Wind Turbine Work Orders"):
-                    # Find the end of the header section
-                    parts = existing_content.split("---", 1)
-                    if len(parts) > 1:
-                        new_content = parts[0] + changelog_entry + "\n" + parts[1]
-                    else:
-                        new_content = header + changelog_entry + "\n\n" + existing_content
-                else:
-                    new_content = header + changelog_entry + "\n\n" + existing_content
-            else:
-                header_parts = [
-                    "# Wind Turbine Work Orders API Documentation",
-                    "",
-                    f"**Repository:** [wind-turbine-workorders](https://github.com/nandomockup/wind-turbine-workorders)",
-                    f"**Last Updated:** {timestamp}",
-                    "",
-                    "> This documentation is automatically generated using AI whenever the API code changes.",
-                    ""
-                ]
-                new_content = "\n".join(header_parts) + "\n" + changelog_entry
+            # Write HTML file
+            with open('docs/index.html', 'w', encoding='utf-8') as f:
+                f.write(html_template)
             
-            with open(index_path, 'w', encoding='utf-8') as f:
-                f.write(new_content)
-            
-            print("Documentation generated successfully!")
-            print(f"Updated: docs/index.md")
+            print("✅ HTML documentation generated successfully!")
+            print(f"📄 Created: docs/index.html")
             
         except Exception as e:
-            print(f"Error calling Bedrock: {e}")
+            print(f"❌ Error: {e}")
             import traceback
             traceback.print_exc()
             raise
         
-        EOF
-    
-    - name: Setup GitHub Pages config
-      run: |
-        cd docs
-        cat > _config.yml << 'EOF'
-        theme: jekyll-theme-slate
-        title: Wind Turbine Work Orders API
-        description: Auto-generated API documentation
-        show_downloads: true
         EOF
     
     - name: Commit documentation
@@ -261,3 +406,4 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs
         publish_branch: gh-pages
+        enable_jekyll: false
