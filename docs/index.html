@@ -39,7 +39,7 @@
     </div>
     <div class="container">
         <div class="meta">
-            <div class="meta-item"><span class="meta-label">Last Updated:</span> January 31, 2026 at 02:21 UTC</div>
+            <div class="meta-item"><span class="meta-label">Last Updated:</span> January 31, 2026 at 02:34 UTC</div>
             <div class="meta-item"><span class="meta-label">Repository:</span> <a href="https://github.com/nandomockup/wind-turbine-workorders">wind-turbine-workorders</a></div>
             <div class="meta-item"><span class="meta-label">Changed Files:</span> 1</div>
         </div>
@@ -52,15 +52,15 @@
 
 <h2>Overview</h2>
 
-<p>This API provides functionality to manage and retrieve work orders for wind turbine maintenance operations. The system enables efficient tracking and monitoring of maintenance activities across wind turbine installations.</p>
+<p>This API provides endpoints to manage and retrieve work orders for wind turbine maintenance operations. The system enables tracking of maintenance activities across multiple wind turbines, supporting operational efficiency and maintenance scheduling.</p>
 
 <h3>Business Impact</h3>
 
 <ul>
-<li>Streamlines maintenance workflow management</li>
-<li>Enables real-time tracking of work order status</li>
-<li>Facilitates better resource allocation for maintenance teams</li>
-<li>Improves operational efficiency through systematic work order management</li>
+<li>Streamlines maintenance tracking and reporting</li>
+<li>Enables real-time status monitoring of work orders</li>
+<li>Facilitates maintenance planning and resource allocation</li>
+<li>Supports compliance and audit requirements</li>
 </ul>
 
 <h2>API Endpoints</h2>
@@ -75,33 +75,28 @@
 
 <pre><code>[
   {
-    "workOrderNumber": "WTWO-0001",
+    "workOrderNumber": "WTWO-0001-x",
     "turbineId": "TURB-001",
     "description": "Maintenance for wind turbine 1",
     "status": "Closed"
   },
-  {
-    "workOrderNumber": "WTWO-0002",
-    "turbineId": "TURB-002",
-    "description": "Maintenance for wind turbine 2",
-    "status": "Open"
-  }
+  ...
 ]
 </code></pre>
 
 <h3>2. Get Work Order by Number</h3>
 
-<p>Retrieves a specific work order using its unique work order number.</p>
+<p>Retrieves a specific work order using its unique identifier.</p>
 
 <p><strong>Endpoint:</strong> <code>GET /api/WorkOrders/{workOrderNumber}</code></p>
 
 <p><strong>Parameters:</strong>
-- <code>workOrderNumber</code> (string): Unique identifier for the work order (Format: WTWO-XXXX)</p>
+- <code>workOrderNumber</code> (string): Unique identifier of the work order (e.g., "WTWO-0001-x")</p>
 
-<p><strong>Response:</strong> Single WorkOrder object</p>
+<p><strong>Response:</strong> Single WorkOrder object or 404 Not Found</p>
 
 <pre><code>{
-  "workOrderNumber": "WTWO-0001",
+  "workOrderNumber": "WTWO-0001-x",
   "turbineId": "TURB-001",
   "description": "Maintenance for wind turbine 1",
   "status": "Closed"
@@ -124,12 +119,12 @@
 <tr>
   <td>WorkOrderNumber</td>
   <td>string</td>
-  <td>Unique identifier (Format: WTWO-XXXX)</td>
+  <td>Unique identifier (format: WTWO-XXXX-x)</td>
 </tr>
 <tr>
   <td>TurbineId</td>
   <td>string</td>
-  <td>Associated turbine ID (Format: TURB-XXX)</td>
+  <td>Associated turbine identifier (format: TURB-XXX)</td>
 </tr>
 <tr>
   <td>Description</td>
@@ -146,59 +141,60 @@
 
 <h2>Business Logic</h2>
 
+<h3>Work Order Generation</h3>
+
 <ul>
-<li>Work orders are automatically generated for 15 sample turbines</li>
-<li>Work order numbers follow the format WTWO-XXXX</li>
-<li>Turbine IDs follow the format TURB-XXX</li>
-<li>Status alternates between "Open" and "Closed" based on even/odd work order numbers</li>
-<li>Returns 404 Not Found if requested work order doesn't exist</li>
+<li>Work orders are pre-populated with 15 sample entries</li>
+<li>Automatic numbering system (WTWO-XXXX-x format)</li>
+<li>Status alternates between "Open" and "Closed" based on even/odd order numbers</li>
+</ul>
+
+<h3>Status Management</h3>
+
+<ul>
+<li>Binary status system (Open/Closed)</li>
+<li>Status assignment follows alternating pattern for demo purposes</li>
 </ul>
 
 <h2>Usage Examples</h2>
 
-<h3>Curl Commands</h3>
-
-<ol>
-<li>Get all work orders:</li>
-</ol>
+<h3>Fetch All Work Orders</h3>
 
 <pre><code>curl -X GET https://your-domain/api/WorkOrders
 </code></pre>
 
-<ol start="2">
-<li>Get specific work order:</li>
-</ol>
+<h3>Fetch Specific Work Order</h3>
 
-<pre><code>curl -X GET https://your-domain/api/WorkOrders/WTWO-0001
+<pre><code>curl -X GET https://your-domain/api/WorkOrders/WTWO-0001-x
 </code></pre>
 
-<h2>Implementation Notes</h2>
+<h2>Technical Notes</h2>
 
 <ul>
 <li>Built using ASP.NET Core Web API</li>
-<li>Uses in-memory storage for demonstration purposes</li>
-<li>Implements RESTful principles</li>
-<li>Returns appropriate HTTP status codes (200 OK, 404 Not Found)</li>
+<li>Uses in-memory data storage (static list)</li>
+<li>RESTful architecture</li>
+<li>Returns standard HTTP status codes (200, 404)</li>
 </ul>
 
 <h2>Future Enhancements</h2>
 
 <ol>
-<li>Add authentication and authorization</li>
-<li>Implement POST/PUT/DELETE operations</li>
-<li>Add persistent storage</li>
+<li>Add POST/PUT/DELETE operations</li>
+<li>Implement persistent storage</li>
+<li>Add authentication/authorization</li>
 <li>Include filtering and pagination</li>
-<li>Add work order history tracking</li>
+<li>Add detailed status tracking</li>
+<li>Implement maintenance history</li>
 </ol>
 
-<h2>Error Handling</h2>
+<h2>Support</h2>
 
-<ul>
-<li>Returns 404 Not Found for non-existent work orders</li>
-<li>Standard HTTP status codes for success/failure scenarios</li>
-</ul>
+<p>For technical support or feature requests, contact the development team at [email].</p>
 
-<p>This API serves as a foundation for wind turbine maintenance management and can be extended based on specific business requirements.</p>
+<hr />
+
+<p><em>Note: This is a demonstration system with sample data. Production implementation will require additional security and data persistence features.</em></p>
 
         </div>
     </div>
