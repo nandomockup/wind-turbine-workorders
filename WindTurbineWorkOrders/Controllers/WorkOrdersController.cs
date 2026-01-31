@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 
-// Testing auto-documentation system workflows by nandos te
+// Testing auto-documentation system workflows by nandos ted
 namespace WindTurbineWorkOrders.Controllers
 {
     [ApiController]
@@ -11,7 +11,7 @@ namespace WindTurbineWorkOrders.Controllers
     {
         private static readonly List<WorkOrder> WorkOrders = Enumerable.Range(1, 15).Select(i => new WorkOrder
         {
-            WorkOrderNumber = $"WTWO-{i:0000}",
+            WorkOrderNumber = $"WTWO-{i:0000}-x",
             TurbineId = $"TURB-{i:000}",
             Description = $"Maintenance for wind turbine {i}",
             Status = i % 2 == 0 ? "Open" : "Closed"
