@@ -187,22 +187,19 @@ jobs:
                 registry['endpoints'].append(endpoint)
             
             # Generate detailed docs for this endpoint
-            detail_prompt = f"""Generate comprehensive API documentation for this endpoint:
-
-Route: {route}
-Method: {method}
-Controller: {endpoint.get('controller', 'Unknown')}
-Description: {endpoint.get('description', 'No description')}
-
-Include:
-1. **Overview** - What this endpoint does
-2. **Request Details** - URL, method, parameters, headers, body schema
-3. **Response Details** - Status codes, response schema, examples
-4. **Error Handling** - Possible errors and how to handle them
-5. **Business Logic** - What happens when this is called
-6. **Usage Example** - cURL and C# code examples
-
-Use professional Markdown format."""
+            detail_prompt = "Generate comprehensive API documentation for this endpoint:\n\n"
+            detail_prompt += f"Route: {route}\n"
+            detail_prompt += f"Method: {method}\n"
+            detail_prompt += f"Controller: {endpoint.get('controller', 'Unknown')}\n"
+            detail_prompt += f"Description: {endpoint.get('description', 'No description')}\n\n"
+            detail_prompt += "Include:\n"
+            detail_prompt += "1. **Overview** - What this endpoint does\n"
+            detail_prompt += "2. **Request Details** - URL, method, parameters, headers, body schema\n"
+            detail_prompt += "3. **Response Details** - Status codes, response schema, examples\n"
+            detail_prompt += "4. **Error Handling** - Possible errors and how to handle them\n"
+            detail_prompt += "5. **Business Logic** - What happens when this is called\n"
+            detail_prompt += "6. **Usage Example** - cURL and C# code examples\n\n"
+            detail_prompt += "Use professional Markdown format."
 
             try:
                 detail_response = bedrock.invoke_model(
